@@ -8,8 +8,7 @@ const SUPRA_ORACLE_ADDRESS = "0x16f70cAD28dd621b0072B5A8a8c392970E87C3dD";
 const KMS_SIGNER_ADDRESS = "0x51DD8C24633a2C5ca794A6405590d9246a8721eF"; 
 
 async function main() {
-  const deployerAddress = "0x51DD8C24633a2C5ca794A6405590d9246a8721eF";
-  const deployer = await ethers.getSigner(deployerAddress);
+  const [deployer] = await ethers.getSigners();
   console.log("====================================================");
   console.log(`Deploying contracts with the account: ${deployer.address}`);
   
@@ -24,7 +23,7 @@ async function main() {
 
   // 1. Deploy BrokexVault
   console.log("1. Deploying BrokexVault...");
-  const BrokexVault = await ethers.getContractFactory("BrokexVault", deployer);
+  const BrokexVault = await ethers.getContractFactory("BrokexVault");
   const vault = await BrokexVault.deploy(USDC_ADDRESS);
   await vault.waitForDeployment();
   const vaultAddress = await vault.getAddress();
@@ -32,7 +31,7 @@ async function main() {
 
   // 2. Deploy BrokexCore
   console.log("\n2. Deploying BrokexCore...");
-  const BrokexCore = await ethers.getContractFactory("BrokexCore", deployer);
+  const BrokexCore = await ethers.getContractFactory("BrokexCore");
   const core = await BrokexCore.deploy(
     USDC_ADDRESS,
     SUPRA_ORACLE_ADDRESS,
@@ -51,7 +50,7 @@ async function main() {
 
   // 4. Deploy BrokexLens
   console.log("\n4. Deploying BrokexLens...");
-  const BrokexLens = await ethers.getContractFactory("BrokexLens", deployer);
+  const BrokexLens = await ethers.getContractFactory("BrokexLens");
   const lens = await BrokexLens.deploy(coreAddress, vaultAddress);
   await lens.waitForDeployment();
   const lensAddress = await lens.getAddress();

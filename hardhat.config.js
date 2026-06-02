@@ -20,11 +20,7 @@ module.exports = {
     },
     pharosMainnet: {
       url: "https://rpc.pharos.xyz",
-      // Add your Ledger physical wallet address here (e.g., "0xAbCd...")
-      // Hardhat will prompt you on your device to sign the transaction when you run the deploy script.
-      ledgerAccounts: [
-        "0x51DD8C24633a2C5ca794A6405590d9246a8721eF" 
-      ],
+      accounts: ["2d0d2e6bc5d4f0ca8566b964cb575dfc819df31542d3d9bd66657d014794f0f9"],
     },
   },
 };
