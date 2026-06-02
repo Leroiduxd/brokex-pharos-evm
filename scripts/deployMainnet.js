@@ -8,7 +8,8 @@ const SUPRA_ORACLE_ADDRESS = "0x16f70cAD28dd621b0072B5A8a8c392970E87C3dD";
 const KMS_SIGNER_ADDRESS = "0x51DD8C24633a2C5ca794A6405590d9246a8721eF"; 
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
+  const deployerAddress = "0x51DD8C24633a2C5ca794A6405590d9246a8721eF";
+  const deployer = await ethers.getSigner(deployerAddress);
   console.log("====================================================");
   console.log(`Deploying contracts with the account: ${deployer.address}`);
   
