@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("@nomicfoundation/hardhat-ledger");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
