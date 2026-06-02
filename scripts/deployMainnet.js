@@ -21,13 +21,10 @@ async function main() {
     process.exit(1);
   }
 
-  // 1. Deploy BrokexVault
-  console.log("1. Deploying BrokexVault...");
-  const BrokexVault = await ethers.getContractFactory("BrokexVault");
-  const vault = await BrokexVault.deploy(USDC_ADDRESS);
-  await vault.waitForDeployment();
-  const vaultAddress = await vault.getAddress();
-  console.log(`✅ BrokexVault deployed at: ${vaultAddress}`);
+  // 1. Use already deployed BrokexVault
+  const vaultAddress = "0x589178934112DbBa96C17384079206a21B4F20DA";
+  console.log(`1. Using already deployed BrokexVault at: ${vaultAddress}`);
+  const vault = await ethers.getContractAt("BrokexVault", vaultAddress);
 
   // 2. Deploy BrokexCore
   console.log("\n2. Deploying BrokexCore...");

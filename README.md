@@ -21,6 +21,12 @@ This repository contains the core smart contracts for the **Brokex Protocol** de
 - **`BrokexVault`**: `0x0AF3B92d4D73590ad520E325202c7Ffe92D51D61`
 - **`BrokexLens`**: `0xc3075b9f71c4c8d57d727b140cd4de77265276d9`
 
+## Deployed Addresses (Pharos Mainnet)
+
+- **`BrokexVault`**: `0x589178934112DbBa96C17384079206a21B4F20DA`
+- **`BrokexCore`**:  `0xC644c18E5F018696D97F407B0c8937D8c5a30424`
+- **`BrokexLens`**:  `0x8A602984E3750cBA7770F680ea6493e2567FD65e`
+
 ## Tech Stack & Setup
 
 - **Framework**: Hardhat
