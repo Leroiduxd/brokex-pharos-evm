@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brokex Admin — Luxury Control Center</title>
+  <!-- Google Fonts: Outfit & Space Grotesk -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Ethers.js v6 -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.1/dist/global.umd.min.js"></script>
+  <!-- Tailwind for structure (custom versions not requested, using standard styling) -->
+  <style>
+    :root {
+      --bg-color: #08080a;
+      --card-bg: rgba(18, 18, 24, 0.75);
+      --gold-primary: #e6b800;
+      --gold-glow: rgba(230, 184, 0, 0.15);
+      --border-color: rgba(230, 184, 0, 0.18);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(230, 184, 0, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(230, 184, 0, 0.03) 0%, transparent 40%);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+      border-bottom: 1px solid rgba(230, 184, 0, 0.1);
+      padding-bottom: 20px;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .logo-icon {
+      width: 45px;
+      height: 45px;
+      background: linear-gradient(135deg, var(--gold-primary), #b38f00);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-family: 'Space Grotesk', sans-serif;
+      color: #000;
+      box-shadow: 0 0 20px var(--gold-glow);
+    }
+
+    .logo-text h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      background: linear-gradient(to right, #fff, var(--gold-primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-text p {
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* Status Pill */
+    .status-pill {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: var(--success);
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--success);
+    }
+
+    /* Admin Grid Layout */
+    .admin-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    @media (max-width: 968px) {
+      .admin-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(12px);
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .card:hover {
+      border-color: rgba(230, 184, 0, 0.4);
+      box-shadow: 0 10px 40px rgba(230, 184, 0, 0.05);
+    }
+
+    .card-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 25px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 12px;
+    }
+
+    .card-title span.accent {
+      color: var(--gold-primary);
+    }
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-field {
+      width: 100%;
+      background: rgba(8, 8, 10, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 15px var(--gold-glow);
+    }
+
+    .input-field::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .field-hint {
+      display: block;
+      font-size: 12px;
+      color: var(--gold-primary);
+      margin-top: 6px;
+      font-weight: 500;
+    }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--gold-primary), #b38f00);
+      border: none;
+      border-radius: 12px;
+      padding: 15px 24px;
+      color: #000;
+      font-weight: 700;
+      font-size: 15px;
+      font-family: 'Space Grotesk', sans-serif;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.3s, opacity 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn:hover {
+      box-shadow: 0 0 25px rgba(230, 184, 0, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: none;
+    }
+
+    /* Info Grid */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .info-box {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .info-box-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .info-box-value {
+      font-size: 18px;
+      font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    /* Custom Terminal */
+    .terminal-container {
+      grid-column: span 2;
+    }
+
+    @media (max-width: 968px) {
+      .terminal-container {
+        grid-column: span 1;
+      }
+    }
+
+    .terminal {
+      background: #040406;
+      border: 1px solid rgba(230, 184, 0, 0.15);
+      border-radius: 15px;
+      padding: 20px;
+      font-family: monospace;
+      color: #38bdf8;
+      font-size: 13px;
+      height: 200px;
+      overflow-y: auto;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+    }
+
+    .terminal-line {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .terminal-time {
+      color: var(--text-muted);
+      margin-right: 10px;
+    }
+
+    .terminal-success {
+      color: var(--success);
+    }
+
+    .terminal-error {
+      color: var(--danger);
+    }
+
+    /* Dual input group */
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="logo-container">
+        <div class="logo-icon">BX</div>
+        <div class="logo-text">
+          <h1>BROKEX ADMIN</h1>
+          <p>Luxury Governance Suite</p>
+        </div>
+      </div>
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        <span>Pharos Testnet Active</span>
+      </div>
+    </header>
+
+    <div class="admin-grid">
+
+      <!-- Column 1: Auth & Vault Operations -->
+      <div style="display: flex; flex-direction: column; gap: 30px;">
+        
+        <!-- Auth Card -->
+        <div class="card">
+          <div class="card-title">
+            <span class="accent">⚡</span> SIGNER AUTHENTICATION
+          </div>
+          <div class="form-group">
+            <label class="form-label">Private Key (Owner/Signer)</label>
+            <div class="input-wrapper">
+              <input type="password" id="privateKeyInput" class="input-field" placeholder="Entrez la clé privée de l'owner...">
+            </div>
+            <span class="field-hint" style="color: var(--text-muted);">Vos clés sont traitées localement dans votre navigateur et ne quittent jamais votre machine.</span>
+          </div>
+          <button class="btn" id="connectKeyBtn" onclick="initializeSigner()">
+            Initialiser la Session Owner
+          </button>
+        </div>
+
+        <!-- Vault Operations Card -->
+        <div class="card">
+          <div class="card-title">
+            <span class="accent">🏦</span> VAULT LIQUIDITY & CONTROLS
+          </div>
+          <div class="info-grid">
+            <div class="info-box">
+              <div class="info-box-label">Vault USDC Balance</div>
+              <div class="info-box-value" id="vaultUsdcBal" style="color: var(--gold-primary);">0.00 USDC</div>
+            </div>
+            <div class="info-box">
+              <div class="info-box-label">Owner USDC Balance</div>
+              <div class="info-box-value" id="ownerUsdcBal">0.00 USDC</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Montant USDC (sans décimales, ex: 50)</label>
+            <input type="number" id="vaultAmountInput" class="input-field" placeholder="Ex: 50">
+          </div>
+
+          <div class="input-row" style="margin-bottom: 25px;">
+            <button class="btn" onclick="executeVaultDeposit()">Déposer</button>
+            <button class="btn btn-secondary" onclick="executeVaultWithdraw()">Retirer</button>
+          </div>
+
+          <div class="card-title" style="font-size: 16px; margin-bottom: 15px;">EMERGENCY CONTROLS</div>
+          <div class="input-row">
+            <button class="btn btn-secondary" id="pauseBtn" onclick="togglePause()" style="border-color: var(--danger); color: var(--danger);">Pause Core</button>
+            <button class="btn btn-secondary" id="emergencyBtn" onclick="toggleEmergency()" style="border-color: var(--danger); color: var(--danger);">Toggle Emergency Mode</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Column 2: Protocol Parameters Modification -->
+      <div class="card">
+        <div class="card-title">
+          <span class="accent">⚙️</span> CONFIGURATION PARAMETERS
+        </div>
+        
+        <div class="input-row">
+          <div class="form-group">
+            <label class="form-label">Min Leverage</label>
+            <input type="number" id="cfgMinLeverage" class="input-field">
+            <span class="field-hint" id="hintMinLeverage">Actuel: -</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Max Leverage</label>
+            <input type="number" id="cfgMaxLeverage" class="input-field">
+            <span class="field-hint" id="hintMaxLeverage">Actuel: -</span>
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="form-group">
+            <label class="form-label">Min Trade Size (USDC)</label>
+            <input type="number" id="cfgMinTradeSize" class="input-field">
+            <span class="field-hint" id="hintMinTradeSize">Actuel: -</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Commission (BPS, 1000 = 0.1%)</label>
+            <input type="number" id="cfgCommissionBps" class="input-field">
+            <span class="field-hint" id="hintCommissionBps">Actuel: -</span>
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="form-group">
+            <label class="form-label">Execution Tolerance (BPS)</label>
+            <input type="number" id="cfgExecutionTolerance" class="input-field">
+            <span class="field-hint" id="hintExecutionTolerance">Actuel: -</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Max Proof Age (sec)</label>
+            <input type="number" id="cfgMaxProofAge" class="input-field">
+            <span class="field-hint" id="hintMaxProofAge">Actuel: -</span>
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="form-group">
+            <label class="form-label">Max Trader OI (USDC)</label>
+            <input type="number" id="cfgMaxTraderOI" class="input-field">
+            <span class="field-hint" id="hintMaxTraderOI">Actuel: -</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Max Global OI (USDC)</label>
+            <input type="number" id="cfgMaxGlobalOI" class="input-field">
+            <span class="field-hint" id="hintMaxGlobalOI">Actuel: -</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">AWS KMS Signer Address</label>
+          <input type="text" id="cfgKmsSigner" class="input-field">
+          <span class="field-hint" id="hintKmsSigner">Actuel: -</span>
+        </div>
+
+        <button class="btn" style="margin-top: 10px;" onclick="executeConfigUpdate()">
+          Appliquer les Modifications on-chain
+        </button>
+      </div>
+
+      <!-- Terminal Log Console -->
+      <div class="terminal-container">
+        <div class="card">
+          <div class="card-title">
+            <span class="accent">📟</span> TRANSACTION CONSOLE LOGS
+          </div>
+          <div class="terminal" id="terminalConsole">
+            <div class="terminal-line"><span class="terminal-time">[14:00:44]</span> <span class="terminal-success">Console active et connectée au Pharos Testnet.</span></div>
+            <div class="terminal-line"><span class="terminal-time">[14:00:44]</span> Entrez votre clé privée et chargez les paramètres du protocole...</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Addresses
+    const CORE_ADDRESS = "0xFba357477565b4A79e21E21AEE00074A61745832";
+    const VAULT_ADDRESS = "0xEde8170FB70Dcc47Ba828ecD07283074d9E80033";
+    const LENS_ADDRESS = "0x1c03b38C14D470b100475337AC8624AD0d3301a5";
+    const USDC_ADDRESS = "0xcfc8330f4bcab529c625d12781b1c19466a9fc8b";
+
+    // Global web3 state
+    let provider;
+    let walletSigner;
+    let coreContract;
+    let vaultContract;
+    let lensContract;
+    let usdcContract;
+
+    // Hardcoded ABIs
+    const LENS_ABI = [
+      "function getProtocolSnapshot() external view returns (tuple(uint256 lastTradeId, uint256 openInterestLong, uint256 openInterestShort, uint256 totalOpenInterest, bool paused, bool emergencyMode, address coreOwner, address kmsSigner, uint256 lpTotalCapital, uint256 lpFreeCapital, uint256 lpLockedCapital, uint256 vaultUsageBps, uint256 totalPayoutPaid, address vaultOwner, address vaultCore, bool coreLocked, tuple(uint256 minLeverage, uint256 maxLeverage, uint256 minTradeSize, uint256 commissionBps, uint256 fundingRateHourly, uint256 profitCap, uint256 executionTolerance, uint256 maxProofAge, uint256 maxTraderOI, uint256 maxGlobalOI) config) s)"
+    ];
+
+    const CORE_ABI = [
+      "function paused() external view returns (bool)",
+      "function emergencyMode() external view returns (bool)",
+      "function setConfig(tuple(uint256 minLeverage, uint256 maxLeverage, uint256 minTradeSize, uint256 commissionBps, uint256 fundingRateHourly, uint256 profitCap, uint256 executionTolerance, uint256 maxProofAge, uint256 maxTraderOI, uint256 maxGlobalOI) cfg) external",
+      "function setKmsSigner(address signer) external",
+      "function setPaused(bool p) external",
+      "function setEmergencyMode(bool e) external"
+    ];
+
+    const VAULT_ABI = [
+      "function deposit(uint256 amount) external",
+      "function withdraw(uint256 amount) external"
+    ];
+
+    const USDC_ABI = [
+      "function balanceOf(address account) external view returns (uint256)",
+      "function approve(address spender, uint256 amount) external returns (bool)"
+    ];
+
+    // Load connection initially
+    window.addEventListener("load", async () => {
+      // Connect to Pharos testnet RPC
+      provider = new ethers.JsonRpcProvider("https://spn-testnet-rpc.pharolabs.xyz");
+      
+      // Initialize contracts with read-only provider first
+      lensContract = new ethers.Contract(LENS_ADDRESS, LENS_ABI, provider);
+      coreContract = new ethers.Contract(CORE_ADDRESS, CORE_ABI, provider);
+      usdcContract = new ethers.Contract(USDC_ADDRESS, USDC_ABI, provider);
+
+      logTerminal("Initialisation de l'API de lecture Pharos testnet...", "info");
+      await loadOnChainConfig();
+    });
+
+    function logTerminal(message, type = "info") {
+      const consoleEl = document.getElementById("terminalConsole");
+      const timeStr = new Date().toLocaleTimeString();
+      let colorClass = "";
+      if (type === "success") colorClass = "terminal-success";
+      if (type === "error") colorClass = "terminal-error";
+
+      const line = document.createElement("div");
+      line.className = "terminal-line";
+      line.innerHTML = `<span class="terminal-time">[${timeStr}]</span> <span class="${colorClass}">${message}</span>`;
+      
+      consoleEl.appendChild(line);
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    // Active loaded config cache
+    let activeOnChainConfig = null;
+
+    async function loadOnChainConfig() {
+      try {
+        logTerminal("Lecture du Snapshot Protocole depuis le contrat Lens...", "info");
+        const s = await lensContract.getProtocolSnapshot();
+        const cfg = s.config;
+
+        activeOnChainConfig = cfg;
+
+        // Prefill inputs & update hints
+        document.getElementById("cfgMinLeverage").value = cfg.minLeverage.toString();
+        document.getElementById("hintMinLeverage").innerText = `Actuel: ${cfg.minLeverage.toString()}x`;
+
+        document.getElementById("cfgMaxLeverage").value = cfg.maxLeverage.toString();
+        document.getElementById("hintMaxLeverage").innerText = `Actuel: ${cfg.maxLeverage.toString()}x`;
+
+        const minTradeSizeFormatted = ethers.formatUnits(cfg.minTradeSize, 6);
+        document.getElementById("cfgMinTradeSize").value = minTradeSizeFormatted;
+        document.getElementById("hintMinTradeSize").innerText = `Actuel: ${minTradeSizeFormatted} USDC`;
+
+        document.getElementById("cfgCommissionBps").value = cfg.commissionBps.toString();
+        document.getElementById("hintCommissionBps").innerText = `Actuel: ${cfg.commissionBps.toString()} BPS`;
+
+        document.getElementById("cfgExecutionTolerance").value = cfg.executionTolerance.toString();
+        document.getElementById("hintExecutionTolerance").innerText = `Actuel: ${cfg.executionTolerance.toString()} BPS`;
+
+        document.getElementById("cfgMaxProofAge").value = cfg.maxProofAge.toString();
+        document.getElementById("hintMaxProofAge").innerText = `Actuel: ${cfg.maxProofAge.toString()}s`;
+
+        const maxTraderFormatted = ethers.formatUnits(cfg.maxTraderOI, 6);
+        document.getElementById("cfgMaxTraderOI").value = maxTraderFormatted;
+        document.getElementById("hintMaxTraderOI").innerText = `Actuel: ${maxTraderFormatted} USDC`;
+
+        const maxGlobalFormatted = ethers.formatUnits(cfg.maxGlobalOI, 6);
+        document.getElementById("cfgMaxGlobalOI").value = maxGlobalFormatted;
+        document.getElementById("hintMaxGlobalOI").innerText = `Actuel: ${maxGlobalFormatted} USDC`;
+
+        document.getElementById("cfgKmsSigner").value = s.kmsSigner;
+        document.getElementById("hintKmsSigner").innerText = `Actuel: ${s.kmsSigner.substring(0, 8)}...${s.kmsSigner.substring(36)}`;
+
+        // Update emergency pill styles
+        document.getElementById("pauseBtn").innerText = s.paused ? "Unpause Core" : "Pause Core";
+        document.getElementById("emergencyBtn").innerText = s.emergencyMode ? "Disable Emergency Mode" : "Enable Emergency Mode";
+
+        // Read balances
+        const vaultBalance = await usdcContract.balanceOf(VAULT_ADDRESS);
+        document.getElementById("vaultUsdcBal").innerText = `${ethers.formatUnits(vaultBalance, 6)} USDC`;
+
+        if (walletSigner) {
+          const ownerBalance = await usdcContract.balanceOf(walletSigner.address);
+          document.getElementById("ownerUsdcBal").innerText = `${ethers.formatUnits(ownerBalance, 6)} USDC`;
+        }
+
+        logTerminal("Snapshot chargé avec succès !", "success");
+      } catch (err) {
+        logTerminal(`Erreur lors du chargement de la config: ${err.message}`, "error");
+        console.error(err);
+      }
+    }
+
+    async function initializeSigner() {
+      const pKey = document.getElementById("privateKeyInput").value.trim();
+      if (!pKey) {
+        logTerminal("Erreur: Clé privée vide.", "error");
+        return;
+      }
+
+      try {
+        walletSigner = new ethers.Wallet(pKey, provider);
+        
+        // Link contracts to wallet signer
+        coreContract = new ethers.Contract(CORE_ADDRESS, CORE_ABI, walletSigner);
+        vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, walletSigner);
+        usdcContract = new ethers.Contract(USDC_ADDRESS, USDC_ABI, walletSigner);
+
+        logTerminal(`Session initialisée pour l'adresse: ${walletSigner.address}`, "success");
+        document.getElementById("connectKeyBtn").innerText = "Session Active";
+        document.getElementById("connectKeyBtn").style.background = "linear-gradient(135deg, var(--success), #059669)";
+
+        // Read owner balance
+        const balance = await usdcContract.balanceOf(walletSigner.address);
+        document.getElementById("ownerUsdcBal").innerText = `${ethers.formatUnits(balance, 6)} USDC`;
+      } catch (err) {
+        logTerminal(`Erreur d'initialisation: ${err.message}`, "error");
+      }
+    }
+
+    async function executeVaultDeposit() {
+      if (!walletSigner) {
+        logTerminal("Veuillez d'abord initialiser votre clé privée !", "error");
+        return;
+      }
+
+      const rawAmount = document.getElementById("vaultAmountInput").value;
+      if (!rawAmount || Number(rawAmount) <= 0) {
+        logTerminal("Erreur: Montant invalide.", "error");
+        return;
+      }
+
+      try {
+        const amount = ethers.parseUnits(rawAmount, 6);
+        logTerminal(`Approbation de la Vault pour dépenser ${rawAmount} USDC...`, "info");
+        const txApprove = await usdcContract.approve(VAULT_ADDRESS, amount);
+        await txApprove.wait();
+        logTerminal(`Approbation confirmée (Tx: ${txApprove.hash}). Dépôt en cours...`, "info");
+
+        const txDeposit = await vaultContract.deposit(amount);
+        await txDeposit.wait();
+        logTerminal(`✅ Succès: ${rawAmount} USDC déposés dans la Vault ! (Tx: ${txDeposit.hash})`, "success");
+
+        await loadOnChainConfig();
+      } catch (err) {
+        logTerminal(`Erreur lors du dépôt: ${err.message}`, "error");
+      }
+    }
+
+    async function executeVaultWithdraw() {
+      if (!walletSigner) {
+        logTerminal("Veuillez d'abord initialiser votre clé privée !", "error");
+        return;
+      }
+
+      const rawAmount = document.getElementById("vaultAmountInput").value;
+      if (!rawAmount || Number(rawAmount) <= 0) {
+        logTerminal("Erreur: Montant invalide.", "error");
+        return;
+      }
+
+      try {
+        const amount = ethers.parseUnits(rawAmount, 6);
+        logTerminal(`Retrait de ${rawAmount} USDC depuis la Vault...`, "info");
+        const txWithdraw = await vaultContract.withdraw(amount);
+        await txWithdraw.wait();
+        logTerminal(`✅ Succès: ${rawAmount} USDC retirés de la Vault ! (Tx: ${txWithdraw.hash})`, "success");
+
+        await loadOnChainConfig();
+      } catch (err) {
+        logTerminal(`Erreur lors du retrait: ${err.message}`, "error");
+      }
+    }
+
+    async function executeConfigUpdate() {
+      if (!walletSigner) {
+        logTerminal("Veuillez d'abord initialiser votre clé privée !", "error");
+        return;
+      }
+
+      try {
+        logTerminal("Préparation de la mise à jour de configuration...", "info");
+
+        const newConfig = {
+          minLeverage: BigInt(document.getElementById("cfgMinLeverage").value),
+          maxLeverage: BigInt(document.getElementById("cfgMaxLeverage").value),
+          minTradeSize: ethers.parseUnits(document.getElementById("cfgMinTradeSize").value, 6),
+          commissionBps: BigInt(document.getElementById("cfgCommissionBps").value),
+          fundingRateHourly: activeOnChainConfig.fundingRateHourly, // Semi-immuable
+          profitCap: activeOnChainConfig.profitCap, // Semi-immuable
+          executionTolerance: BigInt(document.getElementById("cfgExecutionTolerance").value),
+          maxProofAge: BigInt(document.getElementById("cfgMaxProofAge").value),
+          maxTraderOI: ethers.parseUnits(document.getElementById("cfgMaxTraderOI").value, 6),
+          maxGlobalOI: ethers.parseUnits(document.getElementById("cfgMaxGlobalOI").value, 6)
+        };
+
+        logTerminal("Envoi de la transaction setConfig...", "info");
+        const tx = await coreContract.setConfig(newConfig);
+        await tx.wait();
+        logTerminal(`✅ Configuration mise à jour avec succès ! (Tx: ${tx.hash})`, "success");
+
+        // Update KMS Signer if changed
+        const currentKmsInput = document.getElementById("cfgKmsSigner").value.trim();
+        const currentOnChainKms = (await lensContract.getProtocolSnapshot()).kmsSigner;
+        if (currentKmsInput.toLowerCase() !== currentOnChainKms.toLowerCase()) {
+          logTerminal("Mise à jour de l'adresse du KMS Signer...", "info");
+          const txKms = await coreContract.setKmsSigner(currentKmsInput);
+          await txKms.wait();
+          logTerminal(`✅ KMS Signer mis à jour ! (Tx: ${txKms.hash})`, "success");
+        }
+
+        await loadOnChainConfig();
+      } catch (err) {
+        logTerminal(`Erreur de configuration: ${err.message}`, "error");
+      }
+    }
+
+    async function togglePause() {
+      if (!walletSigner) {
+        logTerminal("Veuillez d'abord initialiser votre clé privée !", "error");
+        return;
+      }
+
+      try {
+        const isPaused = (await lensContract.getProtocolSnapshot()).paused;
+        const nextState = !isPaused;
+        logTerminal(`Envoi de setPaused(${nextState})...`, "info");
+        const tx = await coreContract.setPaused(nextState);
+        await tx.wait();
+        logTerminal(`✅ Succès: Core mis en pause = ${nextState} ! (Tx: ${tx.hash})`, "success");
+
+        await loadOnChainConfig();
+      } catch (err) {
+        logTerminal(`Erreur pause: ${err.message}`, "error");
+      }
+    }
+
+    async function toggleEmergency() {
+      if (!walletSigner) {
+        logTerminal("Veuillez d'abord initialiser votre clé privée !", "error");
+        return;
+      }
+
+      try {
+        const isEmergency = (await lensContract.getProtocolSnapshot()).emergencyMode;
+        const nextState = !isEmergency;
+        logTerminal(`Envoi de setEmergencyMode(${nextState})...`, "info");
+        const tx = await coreContract.setEmergencyMode(nextState);
+        await tx.wait();
+        logTerminal(`✅ Succès: Emergency Mode = ${nextState} ! (Tx: ${tx.hash})`, "success");
+
+        await loadOnChainConfig();
+      } catch (err) {
+        logTerminal(`Erreur emergency: ${err.message}`, "error");
+      }
+    }
+  </script>
+</body>
+</html>
