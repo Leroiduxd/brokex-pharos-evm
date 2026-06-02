@@ -22,7 +22,7 @@ module.exports = {
       // Add your Ledger physical wallet address here (e.g., "0xAbCd...")
       // Hardhat will prompt you on your device to sign the transaction when you run the deploy script.
       ledgerAccounts: [
-        "0xYourLedgerAddressHere" 
+        "0x51DD8C24633a2C5ca794A6405590d9246a8721eF" 
       ],
     },
   },

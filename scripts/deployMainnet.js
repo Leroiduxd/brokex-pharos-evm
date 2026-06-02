@@ -5,7 +5,7 @@ const USDC_ADDRESS = "0xc879c018db60520f4355c26ed1a6d572cdac1815";
 const SUPRA_ORACLE_ADDRESS = "0x16f70cAD28dd621b0072B5A8a8c392970E87C3dD";
 
 // Set your production AWS KMS signer address here
-const KMS_SIGNER_ADDRESS = "0xYourKmsSignerAddressHere"; 
+const KMS_SIGNER_ADDRESS = "0x51DD8C24633a2C5ca794A6405590d9246a8721eF"; 
 
 async function main() {
   const [deployer] = await ethers.getSigners();
