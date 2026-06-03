@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brokex — Ownership Acceptance Suite</title>
+  
+  <!-- Google Fonts: Outfit & Space Grotesk -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+  
+  <!-- Ethers.js v6 -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.1/dist/global.umd.min.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #050507;
+      --card-bg: rgba(14, 14, 20, 0.85);
+      --gold-primary: #f5c400;
+      --gold-hover: #ffd93b;
+      --gold-glow: rgba(245, 196, 0, 0.15);
+      --border-color: rgba(245, 196, 0, 0.2);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(245, 196, 0, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(245, 196, 0, 0.02) 0%, transparent 40%);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 50px 20px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+      border-bottom: 1px solid rgba(245, 196, 0, 0.1);
+      padding-bottom: 25px;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .logo-icon {
+      width: 45px;
+      height: 45px;
+      background: linear-gradient(135deg, var(--gold-primary), #b38f00);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-family: 'Space Grotesk', sans-serif;
+      color: #000;
+      box-shadow: 0 0 20px var(--gold-glow);
+    }
+
+    .logo-text h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      background: linear-gradient(to right, #fff, var(--gold-primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-text p {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .status-pill {
+      background: rgba(245, 196, 0, 0.05);
+      border: 1px solid rgba(245, 196, 0, 0.15);
+      color: var(--gold-primary);
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--gold-primary);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--gold-primary);
+    }
+
+    .main-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 35px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(15px);
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .card:hover {
+      border-color: rgba(245, 196, 0, 0.35);
+      box-shadow: 0 15px 50px rgba(245, 196, 0, 0.04);
+    }
+
+    .card-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 15px;
+    }
+
+    .card-title span.accent {
+      color: var(--gold-primary);
+    }
+
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--gold-primary), #b38f00);
+      border: none;
+      border-radius: 12px;
+      padding: 15px 24px;
+      color: #000;
+      font-weight: 750;
+      font-size: 15px;
+      font-family: 'Space Grotesk', sans-serif;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.3s, opacity 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn:hover:not(:disabled) {
+      box-shadow: 0 0 25px rgba(245, 196, 0, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-metamask {
+      background: #e17026;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 25px;
+    }
+
+    .btn-metamask:hover:not(:disabled) {
+      background: #f18137;
+      box-shadow: 0 0 25px rgba(225, 112, 38, 0.4);
+    }
+
+    .contract-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 25px;
+    }
+
+    .contract-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .contract-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--gold-primary);
+    }
+
+    .contract-address {
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .address-line {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      font-size: 14px;
+    }
+
+    .address-line:last-child {
+      border-bottom: none;
+    }
+
+    .address-label {
+      color: var(--text-muted);
+    }
+
+    .address-val {
+      font-family: monospace;
+      color: #fff;
+    }
+
+    .address-val.pending {
+      color: var(--gold-primary);
+      font-weight: 600;
+    }
+
+    .terminal-container {
+      margin-top: 10px;
+    }
+
+    .terminal {
+      background: #020203;
+      border: 1px solid var(--border-color);
+      border-radius: 15px;
+      padding: 20px;
+      font-family: monospace;
+      color: #38bdf8;
+      font-size: 13px;
+      height: 180px;
+      overflow-y: auto;
+      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.95);
+    }
+
+    .terminal-line {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .terminal-time {
+      color: var(--text-muted);
+      margin-right: 10px;
+    }
+
+    .terminal-success {
+      color: var(--success);
+    }
+
+    .terminal-error {
+      color: var(--danger);
+    }
+
+    .warning-alert {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 25px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #fca5a5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="logo-container">
+        <div class="logo-icon">BX</div>
+        <div class="logo-text">
+          <h1>BROKEX</h1>
+          <p>Ownership Acceptance</p>
+        </div>
+      </div>
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        <span id="networkStatus">Pharos Mainnet</span>
+      </div>
+    </header>
+
+    <div class="main-grid">
+
+      <!-- Wallet Connection -->
+      <div class="card">
+        <div class="card-title">
+          <span class="accent">🦊</span> CONNEXION PORTEFEUILLE
+        </div>
+        
+        <button class="btn btn-metamask" id="connectWalletBtn" onclick="connectWallet()">
+          Se connecter avec MetaMask
+        </button>
+
+        <div class="info-box" style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+          <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px;">Compte Connecté</div>
+          <div id="walletAddressDisplay" style="font-family: monospace; font-size: 15px; color: #fff;">Non connecté</div>
+        </div>
+      </div>
+
+      <!-- Accept Ownership Actions -->
+      <div class="card">
+        <div class="card-title">
+          <span class="accent">🗝️</span> CONTRATS EN ATTENTE DE PROPRIÉTÉ
+        </div>
+
+        <div class="warning-alert" id="ownershipWarning" style="display: none;">
+          ⚠️ <strong>Avertissement :</strong> Votre adresse connectée ne correspond pas à l'adresse du propriétaire en attente (Pending Owner). Veuillez vous connecter avec le portefeuille <strong>0x51DD8C24633a2C5ca794A6405590d9246a8721eF</strong> dans MetaMask.
+        </div>
+
+        <!-- Vault -->
+        <div class="contract-box">
+          <div class="contract-header">
+            <span class="contract-name">BrokexVault</span>
+            <span class="contract-address">0x589178934112DbBa96C17384079206a21B4F20DA</span>
+          </div>
+          <div class="address-line">
+            <span class="address-label">Propriétaire Actuel</span>
+            <span class="address-val" id="vaultOwner">-</span>
+          </div>
+          <div class="address-line">
+            <span class="address-label">Propriétaire en Attente</span>
+            <span class="address-val pending" id="vaultPendingOwner">-</span>
+          </div>
+          <button class="btn" id="acceptVaultBtn" style="margin-top: 15px;" onclick="acceptVaultOwnership()" disabled>
+            Accepter la propriété (Vault)
+          </button>
+        </div>
+
+        <!-- Core -->
+        <div class="contract-box">
+          <div class="contract-header">
+            <span class="contract-name">BrokexCore</span>
+            <span class="contract-address">0xC644c18E5F018696D97F407B0c8937D8c5a30424</span>
+          </div>
+          <div class="address-line">
+            <span class="address-label">Propriétaire Actuel</span>
+            <span class="address-val" id="coreOwner">-</span>
+          </div>
+          <div class="address-line">
+            <span class="address-label">Propriétaire en Attente</span>
+            <span class="address-val pending" id="corePendingOwner">-</span>
+          </div>
+          <button class="btn" id="acceptCoreBtn" style="margin-top: 15px;" onclick="acceptCoreOwnership()" disabled>
+            Accepter la propriété (Core)
+          </button>
+        </div>
+      </div>
+
+      <!-- Logs -->
+      <div class="card terminal-container">
+        <div class="card-title">
+          <span class="accent">📟</span> CONSOLE TRANSACTIONNEL
+        </div>
+        <div class="terminal" id="terminalLog">
+          <div class="terminal-line"><span class="terminal-time">[00:00:00]</span> Console prête. Veuillez connecter votre portefeuille MetaMask.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const VAULT_ADDRESS = "0x589178934112DbBa96C17384079206a21B4F20DA";
+    const CORE_ADDRESS = "0xC644c18E5F018696D97F407B0c8937D8c5a30424";
+    const TARGET_OWNER = "0x51DD8C24633a2C5ca794A6405590d9246a8721eF";
+
+    const OWNABLE_ABI = [
+      "function owner() external view returns (address)",
+      "function pendingOwner() external view returns (address)",
+      "function acceptOwnership() external"
+    ];
+
+    let provider;
+    let signer;
+    let userAddress = "";
+    
+    // Read-only provider setup
+    const readOnlyProvider = new ethers.JsonRpcProvider("https://rpc.pharos.xyz");
+    const vaultReadOnly = new ethers.Contract(VAULT_ADDRESS, OWNABLE_ABI, readOnlyProvider);
+    const coreReadOnly = new ethers.Contract(CORE_ADDRESS, OWNABLE_ABI, readOnlyProvider);
+
+    window.addEventListener("load", async () => {
+      logTerminal("Chargement des informations on-chain...", "info");
+      await updateContractStatuses();
+    });
+
+    function logTerminal(message, type = "info") {
+      const consoleEl = document.getElementById("terminalLog");
+      const timeStr = new Date().toLocaleTimeString();
+      let colorClass = "";
+      if (type === "success") colorClass = "terminal-success";
+      if (type === "error") colorClass = "terminal-error";
+
+      const line = document.createElement("div");
+      line.className = "terminal-line";
+      line.innerHTML = `<span class="terminal-time">[${timeStr}]</span> <span class="${colorClass}">${message}</span>`;
+      
+      consoleEl.appendChild(line);
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    async function updateContractStatuses() {
+      try {
+        const vOwner = await vaultReadOnly.owner();
+        const vPending = await vaultReadOnly.pendingOwner();
+        const cOwner = await coreReadOnly.owner();
+        const cPending = await coreReadOnly.pendingOwner();
+
+        document.getElementById("vaultOwner").innerText = vOwner;
+        document.getElementById("vaultPendingOwner").innerText = vPending;
+        document.getElementById("coreOwner").innerText = cOwner;
+        document.getElementById("corePendingOwner").innerText = cPending;
+
+        logTerminal(`Vault Owner: ${vOwner} | Pending: ${vPending}`, "info");
+        logTerminal(`Core Owner: ${cOwner} | Pending: ${cPending}`, "info");
+
+        checkEligibleWallet();
+      } catch (err) {
+        logTerminal(`Erreur de lecture : ${err.message}`, "error");
+      }
+    }
+
+    function checkEligibleWallet() {
+      const vPending = document.getElementById("vaultPendingOwner").innerText.toLowerCase();
+      const cPending = document.getElementById("corePendingOwner").innerText.toLowerCase();
+      const warningEl = document.getElementById("ownershipWarning");
+
+      if (!userAddress) {
+        document.getElementById("acceptVaultBtn").disabled = true;
+        document.getElementById("acceptCoreBtn").disabled = true;
+        warningEl.style.display = "none";
+        return;
+      }
+
+      const isVaultEligible = userAddress.toLowerCase() === vPending && vPending !== ethers.ZeroAddress.toLowerCase();
+      const isCoreEligible = userAddress.toLowerCase() === cPending && cPending !== ethers.ZeroAddress.toLowerCase();
+
+      document.getElementById("acceptVaultBtn").disabled = !isVaultEligible;
+      document.getElementById("acceptCoreBtn").disabled = !isCoreEligible;
+
+      if (userAddress.toLowerCase() !== TARGET_OWNER.toLowerCase()) {
+        warningEl.style.display = "block";
+      } else {
+        warningEl.style.display = "none";
+      }
+    }
+
+    async function connectWallet() {
+      if (typeof window.ethereum === "undefined") {
+        logTerminal("MetaMask non détecté. Veuillez l'installer.", "error");
+        return;
+      }
+
+      try {
+        logTerminal("Demande de connexion à MetaMask...", "info");
+        provider = new ethers.BrowserProvider(window.ethereum);
+        
+        // Request accounts
+        const accounts = await provider.send("eth_requestAccounts", []);
+        userAddress = accounts[0];
+        document.getElementById("walletAddressDisplay").innerText = userAddress;
+        logTerminal(`Wallet connecté : ${userAddress}`, "success");
+
+        // Verify Chain ID
+        const network = await provider.getNetwork();
+        const chainId = network.chainId;
+        logTerminal(`ID de chaine : ${chainId}`, "info");
+
+        if (chainId !== 1672n) {
+          logTerminal("Réseau incorrect. Tentative de basculement vers Pharos Mainnet...", "info");
+          try {
+            await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: '0x688' }], // 1672 in hex
+            });
+            logTerminal("Bascule de réseau réussie !", "success");
+          } catch (switchError) {
+            // This error code indicates that the chain has not been added to MetaMask.
+            if (switchError.code === 4902) {
+              logTerminal("Ajout du réseau Pharos Mainnet dans MetaMask...", "info");
+              try {
+                await window.ethereum.request({
+                  method: 'wallet_addEthereumChain',
+                  params: [{
+                    chainId: '0x688',
+                    chainName: 'Pharos Mainnet',
+                    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                    rpcUrls: ['https://rpc.pharos.xyz'],
+                    blockExplorerUrls: ['https://explorer.pharos.xyz']
+                  }]
+                });
+                logTerminal("Réseau Pharos Mainnet ajouté !", "success");
+              } catch (addError) {
+                logTerminal(`Échec de l'ajout du réseau : ${addError.message}`, "error");
+              }
+            } else {
+              logTerminal(`Échec de la bascule de réseau : ${switchError.message}`, "error");
+            }
+          }
+        }
+
+        signer = await provider.getSigner();
+        document.getElementById("connectWalletBtn").innerText = "Connecté";
+        document.getElementById("connectWalletBtn").style.background = "linear-gradient(135deg, var(--success), #059669)";
+
+        checkEligibleWallet();
+      } catch (err) {
+        logTerminal(`Erreur de connexion : ${err.message}`, "error");
+      }
+    }
+
+    async function acceptVaultOwnership() {
+      if (!signer) return;
+      try {
+        const vault = new ethers.Contract(VAULT_ADDRESS, OWNABLE_ABI, signer);
+        logTerminal("Appel de acceptOwnership() sur BrokexVault...", "info");
+        const tx = await vault.acceptOwnership();
+        logTerminal(`Transaction envoyée ! (Tx: ${tx.hash})`, "info");
+        logTerminal("En attente de confirmation...", "info");
+        await tx.wait();
+        logTerminal("🎉 Propriété de BrokexVault acceptée avec succès !", "success");
+        await updateContractStatuses();
+      } catch (err) {
+        logTerminal(`Erreur Vault : ${err.message}`, "error");
+      }
+    }
+
+    async function acceptCoreOwnership() {
+      if (!signer) return;
+      try {
+        const core = new ethers.Contract(CORE_ADDRESS, OWNABLE_ABI, signer);
+        logTerminal("Appel de acceptOwnership() sur BrokexCore...", "info");
+        const tx = await core.acceptOwnership();
+        logTerminal(`Transaction envoyée ! (Tx: ${tx.hash})`, "info");
+        logTerminal("En attente de confirmation...", "info");
+        await tx.wait();
+        logTerminal("🎉 Propriété de BrokexCore acceptée avec succès !", "success");
+        await updateContractStatuses();
+      } catch (err) {
+        logTerminal(`Erreur Core : ${err.message}`, "error");
+      }
+    }
+  </script>
+</body>
+</html>
