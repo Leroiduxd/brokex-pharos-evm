@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brokex — Vault Deposit Manager</title>
+  
+  <!-- Google Fonts: Outfit & Space Grotesk -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+  
+  <!-- Ethers.js v6 -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.1/dist/ethers.umd.min.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #050507;
+      --card-bg: rgba(14, 14, 20, 0.85);
+      --gold-primary: #f5c400;
+      --gold-hover: #ffd93b;
+      --gold-glow: rgba(245, 196, 0, 0.15);
+      --border-color: rgba(245, 196, 0, 0.2);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(245, 196, 0, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(245, 196, 0, 0.02) 0%, transparent 40%);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 50px 20px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+      border-bottom: 1px solid rgba(245, 196, 0, 0.1);
+      padding-bottom: 25px;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .logo-icon {
+      width: 45px;
+      height: 45px;
+      background: linear-gradient(135deg, var(--gold-primary), #b38f00);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-family: 'Space Grotesk', sans-serif;
+      color: #000;
+      box-shadow: 0 0 20px var(--gold-glow);
+    }
+
+    .logo-text h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      background: linear-gradient(to right, #fff, var(--gold-primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-text p {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .status-pill {
+      background: rgba(245, 196, 0, 0.05);
+      border: 1px solid rgba(245, 196, 0, 0.15);
+      color: var(--gold-primary);
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--gold-primary);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--gold-primary);
+    }
+
+    .main-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 35px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(15px);
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .card:hover {
+      border-color: rgba(245, 196, 0, 0.35);
+      box-shadow: 0 15px 50px rgba(245, 196, 0, 0.04);
+    }
+
+    .card-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 15px;
+    }
+
+    .card-title span.accent {
+      color: var(--gold-primary);
+    }
+
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--gold-primary), #b38f00);
+      border: none;
+      border-radius: 12px;
+      padding: 15px 24px;
+      color: #000;
+      font-weight: 750;
+      font-size: 15px;
+      font-family: 'Space Grotesk', sans-serif;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.3s, opacity 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn:hover:not(:disabled) {
+      box-shadow: 0 0 25px rgba(245, 196, 0, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-metamask {
+      background: #e17026;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 25px;
+    }
+
+    .btn-metamask:hover:not(:disabled) {
+      background: #f18137;
+      box-shadow: 0 0 25px rgba(225, 112, 38, 0.4);
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .info-box {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .info-box-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .info-box-value {
+      font-size: 18px;
+      font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-field {
+      width: 100%;
+      background: rgba(8, 8, 10, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 15px var(--gold-glow);
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .terminal-container {
+      margin-top: 10px;
+    }
+
+    .terminal {
+      background: #020203;
+      border: 1px solid var(--border-color);
+      border-radius: 15px;
+      padding: 20px;
+      font-family: monospace;
+      color: #38bdf8;
+      font-size: 13px;
+      height: 180px;
+      overflow-y: auto;
+      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.95);
+    }
+
+    .terminal-line {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .terminal-time {
+      color: var(--text-muted);
+      margin-right: 10px;
+    }
+
+    .terminal-success {
+      color: var(--success);
+    }
+
+    .terminal-error {
+      color: var(--danger);
+    }
+
+    .warning-alert {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 25px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #fca5a5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="logo-container">
+        <div class="logo-icon">BX</div>
+        <div class="logo-text">
+          <h1>BROKEX VAULT</h1>
+          <p>Deposit & Liquidity Manager</p>
+        </div>
+      </div>
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        <span>Pharos Mainnet</span>
+      </div>
+    </header>
+
+    <div class="main-grid">
+
+      <!-- Wallet Connection -->
+      <div class="card">
+        <div class="card-title">
+          <span class="accent">🦊</span> CONNEXION PORTEFEUILLE
+        </div>
+        
+        <button class="btn btn-metamask" id="connectWalletBtn" onclick="connectWallet()">
+          Se connecter avec MetaMask
+        </button>
+
+        <div class="info-grid">
+          <div class="info-box">
+            <div class="info-box-label">Compte Connecté</div>
+            <div id="walletAddressDisplay" class="info-box-value" style="font-size: 14px; font-family: monospace;">Non connecté</div>
+          </div>
+          <div class="info-box">
+            <div class="info-box-label">Réseau Actuel</div>
+            <div id="networkDisplay" class="info-box-value" style="font-size: 14px;">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vault Balances -->
+      <div class="card">
+        <div class="card-title">
+          <span class="accent">🏦</span> SOLDE ET ÉTAT DE LA LIQUIDITÉ
+        </div>
+
+        <div class="warning-alert" id="ownerWarning" style="display: none;">
+          ⚠️ <strong>Attention :</strong> Vous n'êtes pas l'Owner enregistré de la Vault. Seul l'Owner (<strong><span id="targetOwnerDisplay">-</span></strong>) peut effectuer des dépôts et retraits.
+        </div>
+
+        <div class="info-grid">
+          <div class="info-box">
+            <div class="info-box-label">Solde USDC de la Vault</div>
+            <div id="vaultUsdcBal" class="info-box-value" style="color: var(--gold-primary);">0.00 USDC</div>
+          </div>
+          <div class="info-box">
+            <div class="info-box-label">Ton Solde USDC</div>
+            <div id="userUsdcBal" class="info-box-value">0.00 USDC</div>
+          </div>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-box">
+            <div class="info-box-label">Allowance (Autorisation Vault)</div>
+            <div id="vaultAllowance" class="info-box-value" style="color: var(--gold-primary);">0.00 USDC</div>
+          </div>
+          <div class="info-box">
+            <div class="info-box-label">Propriétaire de la Vault</div>
+            <div id="vaultOwnerDisplay" class="info-box-value" style="font-size: 13px; font-family: monospace;">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deposit / Withdraw Operations -->
+      <div class="card">
+        <div class="card-title">
+          <span class="accent">⚙️</span> OPÉRATIONS DE LIQUIDITÉ
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Montant USDC</label>
+          <input type="number" step="any" id="usdcAmountInput" class="input-field" placeholder="Ex: 50.00" oninput="updateActionButtons()">
+        </div>
+
+        <div class="input-row" style="margin-top: 25px;">
+          <div>
+            <button class="btn" id="approveBtn" onclick="executeApprove()" disabled>
+              1. Autoriser USDC (Approve)
+            </button>
+          </div>
+          <div>
+            <button class="btn" id="depositBtn" onclick="executeDeposit()" disabled>
+              2. Déposer dans la Vault
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 25px;">
+          <button class="btn btn-secondary" id="withdrawBtn" onclick="executeWithdraw()" disabled style="border-color: var(--danger); color: #fff; background: rgba(239, 68, 68, 0.1);">
+            Retirer de la Vault (Withdraw)
+          </button>
+        </div>
+      </div>
+
+      <!-- Logs -->
+      <div class="card terminal-container">
+        <div class="card-title">
+          <span class="accent">📟</span> CONSOLE TRANSACTIONNEL
+        </div>
+        <div class="terminal" id="terminalLog">
+          <div class="terminal-line"><span class="terminal-time">[00:00:00]</span> Console prête. Veuillez connecter votre portefeuille MetaMask.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const VAULT_ADDRESS = "0x589178934112DbBa96C17384079206a21B4F20DA";
+    const USDC_ADDRESS = "0xc879c018db60520f4355c26ed1a6d572cdac1815";
+
+    const VAULT_ABI = [
+      "function owner() external view returns (address)",
+      "function deposit(uint256 amount) external",
+      "function withdraw(uint256 amount) external"
+    ];
+
+    const USDC_ABI = [
+      "function balanceOf(address account) external view returns (uint256)",
+      "function allowance(address owner, address spender) external view returns (uint256)",
+      "function approve(address spender, uint256 amount) external returns (bool)"
+    ];
+
+    let provider;
+    let signer;
+    let userAddress = "";
+    let vaultOwner = "";
+    let userUsdcBalance = 0n;
+    let currentAllowance = 0n;
+
+    // Read-only contracts initialized safely inside load event
+    let readOnlyProvider;
+    let vaultReadOnly;
+    let usdcReadOnly;
+
+    window.addEventListener("load", async () => {
+      try {
+        if (typeof ethers === "undefined") {
+          logTerminal("Erreur : La bibliothèque ethers.js n'a pas pu être chargée. Vérifiez votre connexion Internet.", "error");
+          return;
+        }
+
+        readOnlyProvider = new ethers.JsonRpcProvider("https://rpc.pharos.xyz");
+        vaultReadOnly = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, readOnlyProvider);
+        usdcReadOnly = new ethers.Contract(USDC_ADDRESS, USDC_ABI, readOnlyProvider);
+
+        logTerminal("Lecture de la configuration Vault...", "info");
+        await updateVaultStats();
+      } catch (err) {
+        logTerminal(`Erreur chargement initial : ${err.message}`, "error");
+      }
+    });
+
+    function logTerminal(message, type = "info") {
+      const consoleEl = document.getElementById("terminalLog");
+      const timeStr = new Date().toLocaleTimeString();
+      let colorClass = "";
+      if (type === "success") colorClass = "terminal-success";
+      if (type === "error") colorClass = "terminal-error";
+
+      const line = document.createElement("div");
+      line.className = "terminal-line";
+      line.innerHTML = `<span class="terminal-time">[${timeStr}]</span> <span class="${colorClass}">${message}</span>`;
+      
+      consoleEl.appendChild(line);
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    async function updateVaultStats() {
+      if (!vaultReadOnly || !usdcReadOnly) return;
+
+      try {
+        vaultOwner = await vaultReadOnly.owner();
+        document.getElementById("vaultOwnerDisplay").innerText = vaultOwner;
+        document.getElementById("targetOwnerDisplay").innerText = vaultOwner;
+
+        const vaultBalance = await usdcReadOnly.balanceOf(VAULT_ADDRESS);
+        document.getElementById("vaultUsdcBal").innerText = `${ethers.formatUnits(vaultBalance, 6)} USDC`;
+
+        if (userAddress) {
+          userUsdcBalance = await usdcReadOnly.balanceOf(userAddress);
+          currentAllowance = await usdcReadOnly.allowance(userAddress, VAULT_ADDRESS);
+
+          document.getElementById("userUsdcBal").innerText = `${ethers.formatUnits(userUsdcBalance, 6)} USDC`;
+          document.getElementById("vaultAllowance").innerText = `${ethers.formatUnits(currentAllowance, 6)} USDC`;
+
+          // Warn if user is not owner
+          if (userAddress.toLowerCase() !== vaultOwner.toLowerCase()) {
+            document.getElementById("ownerWarning").style.display = "block";
+          } else {
+            document.getElementById("ownerWarning").style.display = "none";
+          }
+        }
+
+        updateActionButtons();
+      } catch (err) {
+        logTerminal(`Erreur lors de la lecture RPC : ${err.message}`, "error");
+      }
+    }
+
+    function updateActionButtons() {
+      const amountInput = document.getElementById("usdcAmountInput").value;
+      
+      if (!userAddress || !amountInput || parseFloat(amountInput) <= 0) {
+        document.getElementById("approveBtn").disabled = true;
+        document.getElementById("depositBtn").disabled = true;
+        document.getElementById("withdrawBtn").disabled = true;
+        return;
+      }
+
+      const inputAmount = ethers.parseUnits(amountInput, 6);
+      const isOwner = userAddress.toLowerCase() === vaultOwner.toLowerCase();
+
+      // Approve logic: enabled if we are owner and allowance is less than the input amount
+      const needsApprove = currentAllowance < inputAmount;
+      document.getElementById("approveBtn").disabled = !isOwner || !needsApprove;
+
+      // Deposit logic: enabled if we are owner and allowance is sufficient
+      document.getElementById("depositBtn").disabled = !isOwner || needsApprove;
+
+      // Withdraw logic: enabled if we are owner
+      document.getElementById("withdrawBtn").disabled = !isOwner;
+    }
+
+    async function connectWallet() {
+      if (typeof window.ethereum === "undefined") {
+        logTerminal("MetaMask non détecté. Veuillez l'installer.", "error");
+        alert("MetaMask n'est pas détecté. Veuillez ouvrir cette page dans un navigateur équipé de l'extension MetaMask.");
+        return;
+      }
+
+      try {
+        logTerminal("Demande de connexion à MetaMask...", "info");
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        userAddress = accounts[0];
+        document.getElementById("walletAddressDisplay").innerText = userAddress;
+        logTerminal(`Wallet connecté : ${userAddress}`, "success");
+
+        provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
+
+        const network = await provider.getNetwork();
+        document.getElementById("networkDisplay").innerText = `${network.name} (ID: ${network.chainId})`;
+
+        if (network.chainId !== 1672n) {
+          logTerminal("Réseau incorrect. Tentative de basculement vers Pharos Mainnet...", "info");
+          try {
+            await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: '0x688' }], // 1672 in hex
+            });
+            logTerminal("Bascule de réseau réussie !", "success");
+            document.getElementById("networkDisplay").innerText = "Pharos Mainnet (ID: 1672)";
+          } catch (switchError) {
+            if (switchError.code === 4902) {
+              logTerminal("Ajout du réseau Pharos Mainnet dans MetaMask...", "info");
+              try {
+                await window.ethereum.request({
+                  method: 'wallet_addEthereumChain',
+                  params: [{
+                    chainId: '0x688',
+                    chainName: 'Pharos Mainnet',
+                    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                    rpcUrls: ['https://rpc.pharos.xyz'],
+                    blockExplorerUrls: ['https://explorer.pharos.xyz']
+                  }]
+                });
+                logTerminal("Réseau Pharos Mainnet ajouté !", "success");
+              } catch (addError) {
+                logTerminal(`Échec de l'ajout du réseau : ${addError.message}`, "error");
+              }
+            } else {
+              logTerminal(`Échec de la bascule de réseau : ${switchError.message}`, "error");
+            }
+          }
+        }
+
+        document.getElementById("connectWalletBtn").innerText = "Connecté";
+        document.getElementById("connectWalletBtn").style.background = "linear-gradient(135deg, var(--success), #059669)";
+
+        await updateVaultStats();
+      } catch (err) {
+        logTerminal(`Erreur de connexion : ${err.message}`, "error");
+      }
+    }
+
+    async function executeApprove() {
+      if (!signer) return;
+      const amountInput = document.getElementById("usdcAmountInput").value;
+      if (!amountInput || parseFloat(amountInput) <= 0) return;
+
+      try {
+        const amount = ethers.parseUnits(amountInput, 6);
+        const usdc = new ethers.Contract(USDC_ADDRESS, USDC_ABI, signer);
+
+        logTerminal(`Approbation de ${amountInput} USDC pour la Vault...`, "info");
+        const tx = await usdc.approve(VAULT_ADDRESS, amount);
+        logTerminal(`Transaction d'approbation envoyée ! (Tx: ${tx.hash})`, "info");
+        logTerminal("En attente de confirmation...", "info");
+        await tx.wait();
+        logTerminal(`🎉 USDC approuvé avec succès pour la Vault !`, "success");
+
+        await updateVaultStats();
+      } catch (err) {
+        logTerminal(`Erreur Approve : ${err.message}`, "error");
+      }
+    }
+
+    async function executeDeposit() {
+      if (!signer) return;
+      const amountInput = document.getElementById("usdcAmountInput").value;
+      if (!amountInput || parseFloat(amountInput) <= 0) return;
+
+      try {
+        const amount = ethers.parseUnits(amountInput, 6);
+        const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
+
+        logTerminal(`Dépôt de ${amountInput} USDC dans la Vault...`, "info");
+        const tx = await vault.deposit(amount);
+        logTerminal(`Transaction de dépôt envoyée ! (Tx: ${tx.hash})`, "info");
+        logTerminal("En attente de confirmation...", "info");
+        await tx.wait();
+        logTerminal(`🎉 Dépôt de ${amountInput} USDC confirmé avec succès !`, "success");
+
+        document.getElementById("usdcAmountInput").value = "";
+        await updateVaultStats();
+      } catch (err) {
+        logTerminal(`Erreur Deposit : ${err.message}`, "error");
+      }
+    }
+
+    async function executeWithdraw() {
+      if (!signer) return;
+      const amountInput = document.getElementById("usdcAmountInput").value;
+      if (!amountInput || parseFloat(amountInput) <= 0) return;
+
+      try {
+        const amount = ethers.parseUnits(amountInput, 6);
+        const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
+
+        logTerminal(`Retrait de ${amountInput} USDC de la Vault...`, "info");
+        const tx = await vault.withdraw(amount);
+        logTerminal(`Transaction de retrait envoyée ! (Tx: ${tx.hash})`, "info");
+        logTerminal("En attente de confirmation...", "info");
+        await tx.wait();
+        logTerminal(`🎉 Retrait de ${amountInput} USDC confirmé avec succès !`, "success");
+
+        document.getElementById("usdcAmountInput").value = "";
+        await updateVaultStats();
+      } catch (err) {
+        logTerminal(`Erreur Withdraw : ${err.message}`, "error");
+      }
+    }
+  </script>
+</body>
+</html>
