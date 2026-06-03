@@ -410,14 +410,27 @@
     let signer;
     let userAddress = "";
     
-    // Read-only provider setup
-    const readOnlyProvider = new ethers.JsonRpcProvider("https://rpc.pharos.xyz");
-    const vaultReadOnly = new ethers.Contract(VAULT_ADDRESS, OWNABLE_ABI, readOnlyProvider);
-    const coreReadOnly = new ethers.Contract(CORE_ADDRESS, OWNABLE_ABI, readOnlyProvider);
+    // Read-only provider & contracts initialized inside load event to prevent parser crashes
+    let readOnlyProvider;
+    let vaultReadOnly;
+    let coreReadOnly;
 
     window.addEventListener("load", async () => {
-      logTerminal("Chargement des informations on-chain...", "info");
-      await updateContractStatuses();
+      try {
+        if (typeof ethers === "undefined") {
+          logTerminal("Erreur : La bibliothèque ethers.js n'a pas pu être chargée. Vérifiez votre connexion Internet.", "error");
+          return;
+        }
+
+        readOnlyProvider = new ethers.JsonRpcProvider("https://rpc.pharos.xyz");
+        vaultReadOnly = new ethers.Contract(VAULT_ADDRESS, OWNABLE_ABI, readOnlyProvider);
+        coreReadOnly = new ethers.Contract(CORE_ADDRESS, OWNABLE_ABI, readOnlyProvider);
+
+        logTerminal("Chargement des informations on-chain...", "info");
+        await updateContractStatuses();
+      } catch (err) {
+        logTerminal(`Erreur lors du chargement initial : ${err.message}`, "error");
+      }
     });
 
     function logTerminal(message, type = "info") {
@@ -436,6 +449,9 @@
     }
 
     async function updateContractStatuses() {
+      if (!vaultReadOnly || !coreReadOnly) {
+        return;
+      }
       try {
         const vOwner = await vaultReadOnly.owner();
         const vPending = await vaultReadOnly.pendingOwner();
@@ -452,7 +468,7 @@
 
         checkEligibleWallet();
       } catch (err) {
-        logTerminal(`Erreur de lecture : ${err.message}`, "error");
+        logTerminal(`Erreur de lecture RPC : ${err.message}`, "error");
       }
     }
 
@@ -484,18 +500,26 @@
     async function connectWallet() {
       if (typeof window.ethereum === "undefined") {
         logTerminal("MetaMask non détecté. Veuillez l'installer.", "error");
+        alert("MetaMask n'est pas détecté sur ce navigateur. Veuillez utiliser un navigateur équipé de MetaMask.");
         return;
       }
 
       try {
         logTerminal("Demande de connexion à MetaMask...", "info");
-        provider = new ethers.BrowserProvider(window.ethereum);
         
-        // Request accounts
-        const accounts = await provider.send("eth_requestAccounts", []);
+        // Request accounts directly via window.ethereum (standard & robust)
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        if (!accounts || accounts.length === 0) {
+          logTerminal("Aucun compte retourné par MetaMask.", "error");
+          return;
+        }
+        
         userAddress = accounts[0];
         document.getElementById("walletAddressDisplay").innerText = userAddress;
         logTerminal(`Wallet connecté : ${userAddress}`, "success");
+
+        provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
 
         // Verify Chain ID
         const network = await provider.getNetwork();
@@ -511,7 +535,6 @@
             });
             logTerminal("Bascule de réseau réussie !", "success");
           } catch (switchError) {
-            // This error code indicates that the chain has not been added to MetaMask.
             if (switchError.code === 4902) {
               logTerminal("Ajout du réseau Pharos Mainnet dans MetaMask...", "info");
               try {
@@ -535,7 +558,6 @@
           }
         }
 
-        signer = await provider.getSigner();
         document.getElementById("connectWalletBtn").innerText = "Connecté";
         document.getElementById("connectWalletBtn").style.background = "linear-gradient(135deg, var(--success), #059669)";
 
